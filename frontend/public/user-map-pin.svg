@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36">
+    <!-- Pin shape -->
+    <path d="M12 0C5.4 0 0 5.4 0 12c0 7.2 12 24 12 24s12-16.8 12-24c0-6.6-5.4-12-12-12z" fill="#FF4444"/>
+    <!-- Inner circle -->
+    <circle cx="12" cy="12" r="6" fill="white"/>
+</svg>
