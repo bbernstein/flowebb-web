@@ -1,6 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
-import type { Icon, LatLng, LatLngBounds } from 'leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -97,6 +96,7 @@ function Map({ userLocation, stations, onLocationSelect }: MapProps) {
     // Generate a unique ID for this instance of the map
     const mapId = useMemo(() => `map-${Math.random()}`, []);
 
+    console.log(`stations: ${stations.length}`);
     return (
         <div className="h-full w-full" id={mapId}>
             <MapContainer
