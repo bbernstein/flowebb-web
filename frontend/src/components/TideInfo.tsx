@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 type TideInfo = {
     timestamp: number;
@@ -7,7 +7,7 @@ type TideInfo = {
     nearestStation: string;
     location: string;
     stationDistance: number;
-    type: "RISING" | "FALLING" | "HIGH" | "LOW";
+    tideType: "RISING" | "FALLING" | "HIGH" | "LOW";
     calculationMethod: "NOAA API" | "Harmonic Calculation";
 };
 
@@ -16,31 +16,29 @@ type TideInfoProps = {
 };
 
 export function TideInfo({ stationId }: TideInfoProps) {
-    const [noaaData, setNoaaData] = useState<TideInfo | null>(null);
-    const [calculatedData, setCalculatedData] = useState<TideInfo | null>(null);
+    const [useCalculated, setUseCalculated] = useState(true);
+    const [tideData, setTideData] = useState<TideInfo | null>(null);
     const [error, setError] = useState<string>('');
     const [loading, setLoading] = useState(true);
 
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
     useEffect(() => {
         const fetchTideData = async () => {
+            setLoading(true);
             try {
-                // Fetch both NOAA API and calculated data in parallel
-                const [noaaResponse, calculatedResponse] = await Promise.all([
-                    fetch(`http://0.0.0.0:8080/api/tides?stationId=${stationId}`),
-                    fetch(`http://0.0.0.0:8080/api/tides?stationId=${stationId}&useCalculation=true`)
-                ]);
+                const response = await fetch(
+                    `${ apiBaseUrl }/api/tides?stationId=${ stationId }&useCalculation=${ useCalculated }`
+                );
 
-                if (!noaaResponse.ok || !calculatedResponse.ok) {
-                    throw new Error('Failed to fetch tide data');
+                if (!response.ok) {
+                    setError('Failed to fetch tide data');
+                    console.error('Failed to fetch tide data');
+                    return;
                 }
 
-                const [noaaData, calculatedData] = await Promise.all([
-                    noaaResponse.json(),
-                    calculatedResponse.json()
-                ]);
-
-                setNoaaData(noaaData);
-                setCalculatedData(calculatedData);
+                const data = await response.json();
+                setTideData(data);
                 setError('');
             } catch (err) {
                 setError('Failed to fetch tide data');
@@ -51,79 +49,68 @@ export function TideInfo({ stationId }: TideInfoProps) {
         };
 
         fetchTideData();
-    }, [stationId]);
+    }, [stationId, useCalculated, apiBaseUrl]);
 
     if (loading) {
         return <div className="animate-pulse bg-foreground/5 h-32 rounded-md"></div>;
     }
 
     if (error) {
-        return <div className="text-red-500 text-sm">{error}</div>;
+        return <div className="text-red-500 text-sm">{ error }</div>;
     }
 
-    if (!noaaData || !calculatedData) {
+    if (!tideData) {
         return null;
     }
 
-    const date = new Date(noaaData.timestamp);
-    const difference = Math.abs(noaaData.waterLevel - calculatedData.waterLevel);
+    const date = new Date(tideData.timestamp);
 
     return (
         <div className="space-y-4 p-4 bg-foreground/5 rounded-md">
             <div className="flex justify-between items-start">
                 <div>
                     <h4 className="font-medium">Current Tide Status</h4>
-                    <p className="text-sm opacity-70">{date.toLocaleString()}</p>
+                    <p className="text-sm opacity-70">{ date.toLocaleString() }</p>
                 </div>
-                <div className="flex gap-2">
-                    <span className="px-2 py-1 text-xs rounded-full bg-foreground/10">
-                        NOAA: {noaaData.type}
+                <label className="flex items-center gap-2 cursor-pointer">
+                    <span className="text-sm">
+                        { useCalculated ? 'Calculated' : 'NOAA' }
                     </span>
-                    <span className="px-2 py-1 text-xs rounded-full bg-foreground/10">
-                        Calculated: {calculatedData.type}
-                    </span>
-                </div>
+                    <div className="relative inline-flex items-center">
+                        <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={ useCalculated }
+                            onChange={ e => setUseCalculated(e.target.checked) }
+                        />
+                        <div
+                            className="w-9 h-5 bg-foreground/20 peer-checked:bg-blue-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                    </div>
+                </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
-                {/* NOAA API Data */}
-                <div className="space-y-3">
-                    <h5 className="text-sm font-medium">NOAA API Data</h5>
-                    <div className="grid grid-cols-2 gap-2">
-                        <div>
-                            <p className="text-sm opacity-70">Current</p>
-                            <p className="font-medium">{noaaData.waterLevel.toFixed(2)} ft</p>
-                        </div>
-                        <div>
-                            <p className="text-sm opacity-70">Predicted</p>
-                            <p className="font-medium">{noaaData.predictedLevel.toFixed(2)} ft</p>
-                        </div>
+            <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                    <h5 className="text-sm font-medium">
+                        { tideData.calculationMethod } Data
+                    </h5>
+                    <span className="px-2 py-1 text-xs rounded-full bg-foreground/10">
+                        { tideData.tideType }
+                    </span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <p className="text-sm opacity-70">Current</p>
+                        <p className="font-medium">{ tideData.waterLevel.toFixed(2) } ft</p>
+                    </div>
+                    <div>
+                        <p className="text-sm opacity-70">Predicted</p>
+                        <p className="font-medium">{ tideData.predictedLevel.toFixed(2) } ft</p>
                     </div>
                 </div>
-
-                {/* Calculated Data */}
-                <div className="space-y-3">
-                    <h5 className="text-sm font-medium">Harmonic Calculation</h5>
-                    <div className="grid grid-cols-2 gap-2">
-                        <div>
-                            <p className="text-sm opacity-70">Current</p>
-                            <p className="font-medium">{calculatedData.waterLevel.toFixed(2)} ft</p>
-                        </div>
-                        <div>
-                            <p className="text-sm opacity-70">Predicted</p>
-                            <p className="font-medium">{calculatedData.predictedLevel.toFixed(2)} ft</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Difference */}
-            <div className="pt-2 border-t border-foreground/10">
-                <p className="text-sm">
-                    <span className="opacity-70">Difference between methods: </span>
-                    <span className="font-medium">{difference.toFixed(2)} ft</span>
-                </p>
             </div>
         </div>
     );
 }
+
+export default TideInfo;
