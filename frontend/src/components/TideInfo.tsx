@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Card, CardContent, Typography, Switch, Box, Chip, CircularProgress } from '@mui/material';
+import Grid2 from '@mui/material/Grid2';  // This is the proper import
+import { styled } from '@mui/material/styles';
 
 type TideInfo = {
     timestamp: number;
@@ -15,6 +18,12 @@ type TideInfoProps = {
     stationId: string;
 };
 
+const StyledCard = styled(Card)(({ theme }) => ({
+    backgroundColor: theme.palette.mode === 'dark'
+        ? theme.palette.background.paper
+        : theme.palette.grey[50],
+}));
+
 export function TideInfo({ stationId }: TideInfoProps) {
     const [useCalculated, setUseCalculated] = useState(true);
     const [tideData, setTideData] = useState<TideInfo | null>(null);
@@ -28,7 +37,7 @@ export function TideInfo({ stationId }: TideInfoProps) {
             setLoading(true);
             try {
                 const response = await fetch(
-                    `${ apiBaseUrl }/api/tides?stationId=${ stationId }&useCalculation=${ useCalculated }`
+                    `${apiBaseUrl}/api/tides?stationId=${stationId}&useCalculation=${useCalculated}`
                 );
 
                 if (!response.ok) {
@@ -52,11 +61,11 @@ export function TideInfo({ stationId }: TideInfoProps) {
     }, [stationId, useCalculated, apiBaseUrl]);
 
     if (loading) {
-        return <div className="animate-pulse bg-foreground/5 h-32 rounded-md"></div>;
+        return <Box display="flex" justifyContent="center" p={3}><CircularProgress /></Box>;
     }
 
     if (error) {
-        return <div className="text-red-500 text-sm">{ error }</div>;
+        return <Typography color="error" variant="body2">{error}</Typography>;
     }
 
     if (!tideData) {
@@ -66,50 +75,56 @@ export function TideInfo({ stationId }: TideInfoProps) {
     const date = new Date(tideData.timestamp);
 
     return (
-        <div className="space-y-4 p-4 bg-foreground/5 rounded-md">
-            <div className="flex justify-between items-start">
-                <div>
-                    <h4 className="font-medium">Current Tide Status</h4>
-                    <p className="text-sm opacity-70">{ date.toLocaleString() }</p>
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                    <span className="text-sm">
-                        { useCalculated ? 'Calculated' : 'NOAA' }
-                    </span>
-                    <div className="relative inline-flex items-center">
-                        <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={ useCalculated }
-                            onChange={ e => setUseCalculated(e.target.checked) }
+        <StyledCard variant="outlined">
+            <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                    <Box>
+                        <Typography variant="h6">Current Tide Status</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {date.toLocaleString()}
+                        </Typography>
+                    </Box>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="body2" color="text.secondary">
+                            {useCalculated ? 'Calculated' : 'NOAA'}
+                        </Typography>
+                        <Switch
+                            checked={useCalculated}
+                            onChange={(e) => setUseCalculated(e.target.checked)}
+                            size="small"
                         />
-                        <div
-                            className="w-9 h-5 bg-foreground/20 peer-checked:bg-blue-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
-                    </div>
-                </label>
-            </div>
+                    </Box>
+                </Box>
 
-            <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                    <h5 className="text-sm font-medium">
-                        { tideData.calculationMethod } Data
-                    </h5>
-                    <span className="px-2 py-1 text-xs rounded-full bg-foreground/10">
-                        { tideData.tideType }
-                    </span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <p className="text-sm opacity-70">Current</p>
-                        <p className="font-medium">{ tideData.waterLevel.toFixed(2) } ft</p>
-                    </div>
-                    <div>
-                        <p className="text-sm opacity-70">Predicted</p>
-                        <p className="font-medium">{ tideData.predictedLevel.toFixed(2) } ft</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+                <Box>
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="subtitle2">
+                            {tideData.calculationMethod} Data
+                        </Typography>
+                        <Chip
+                            label={tideData.tideType}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                        />
+                    </Box>
+                    <Grid2 container spacing={2}>
+                        <Grid2 container xs={6} component="div">
+                            <Typography variant="body2" color="text.secondary">Current</Typography>
+                            <Typography variant="subtitle1">
+                                {tideData.waterLevel.toFixed(2)} ft
+                            </Typography>
+                        </Grid2>
+                        <Grid2 container xs={6} component="div">
+                            <Typography variant="body2" color="text.secondary">Predicted</Typography>
+                            <Typography variant="subtitle1">
+                                {tideData.predictedLevel.toFixed(2)} ft
+                            </Typography>
+                        </Grid2>
+                    </Grid2>
+                </Box>
+            </CardContent>
+        </StyledCard>
     );
 }
 
