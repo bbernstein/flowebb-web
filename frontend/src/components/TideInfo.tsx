@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent, Typography, Switch, Box, Chip, CircularProgress } from '@mui/material';
-import Grid2 from '@mui/material/Grid2';  // This is the proper import
+import { Card, CardContent, Typography, Switch, Box, Chip, CircularProgress, Grid2 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 type TideInfo = {
@@ -109,17 +108,21 @@ export function TideInfo({ stationId }: TideInfoProps) {
                         />
                     </Box>
                     <Grid2 container spacing={2}>
-                        <Grid2 container xs={6} component="div">
-                            <Typography variant="body2" color="text.secondary">Current</Typography>
-                            <Typography variant="subtitle1">
-                                {tideData.waterLevel.toFixed(2)} ft
-                            </Typography>
+                        <Grid2 size={2}>
+                            <Box>
+                                <Typography variant="body2" color="text.secondary">Current</Typography>
+                                <Typography variant="subtitle1">
+                                    {tideData.waterLevel.toFixed(2)} ft
+                                </Typography>
+                            </Box>
                         </Grid2>
-                        <Grid2 container xs={6} component="div">
-                            <Typography variant="body2" color="text.secondary">Predicted</Typography>
-                            <Typography variant="subtitle1">
-                                {tideData.predictedLevel.toFixed(2)} ft
-                            </Typography>
+                        <Grid2 size={2}>
+                            <Box>
+                                <Typography variant="body2" color="text.secondary">Predicted</Typography>
+                                <Typography variant="subtitle1">
+                                    {tideData.predictedLevel.toFixed(2)} ft
+                                </Typography>
+                            </Box>
                         </Grid2>
                     </Grid2>
                 </Box>
