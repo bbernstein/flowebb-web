@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent, Typography, Switch, Box, Chip, CircularProgress, Grid2 } from '@mui/material';
+import { Card, CardContent, Typography, Box, Chip, CircularProgress, Grid2 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 type TideInfo = {
@@ -10,7 +10,7 @@ type TideInfo = {
     location: string;
     stationDistance: number;
     tideType: "RISING" | "FALLING" | "HIGH" | "LOW";
-    calculationMethod: "NOAA API" | "Harmonic Calculation";
+    calculationMethod: "NOAA API";
 };
 
 type TideInfoProps = {
@@ -24,7 +24,6 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 export function TideInfo({ stationId }: TideInfoProps) {
-    const [useCalculated, setUseCalculated] = useState(true);
     const [tideData, setTideData] = useState<TideInfo | null>(null);
     const [error, setError] = useState<string>('');
     const [loading, setLoading] = useState(true);
@@ -36,7 +35,7 @@ export function TideInfo({ stationId }: TideInfoProps) {
             setLoading(true);
             try {
                 const response = await fetch(
-                    `${apiBaseUrl}/api/tides?stationId=${stationId}&useCalculation=${useCalculated}`
+                    `${apiBaseUrl}/api/tides?stationId=${stationId}`
                 );
 
                 if (!response.ok) {
@@ -57,7 +56,7 @@ export function TideInfo({ stationId }: TideInfoProps) {
         };
 
         fetchTideData();
-    }, [stationId, useCalculated, apiBaseUrl]);
+    }, [stationId, apiBaseUrl]);
 
     if (loading) {
         return <Box display="flex" justifyContent="center" p={3}><CircularProgress /></Box>;
@@ -83,22 +82,12 @@ export function TideInfo({ stationId }: TideInfoProps) {
                             {date.toLocaleString()}
                         </Typography>
                     </Box>
-                    <Box display="flex" alignItems="center" gap={1}>
-                        <Typography variant="body2" color="text.secondary">
-                            {useCalculated ? 'Calculated' : 'NOAA'}
-                        </Typography>
-                        <Switch
-                            checked={useCalculated}
-                            onChange={(e) => setUseCalculated(e.target.checked)}
-                            size="small"
-                        />
-                    </Box>
                 </Box>
 
                 <Box>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                         <Typography variant="subtitle2">
-                            {tideData.calculationMethod} Data
+                            NOAA Predictions
                         </Typography>
                         <Chip
                             label={tideData.tideType}
