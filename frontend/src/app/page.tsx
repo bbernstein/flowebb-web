@@ -78,19 +78,19 @@ export default function Home() {
     const handleMapClick = (lat: number, lon: number) => {
         setSelectedStationId(null); // Clear selected station when location changes
         locationStorage.set({ lat, lon });
-        fetchStations(lat, lon);
+        fetchStations(lat, lon).then();
     };
 
     const fetchStations = async (lat: number, lon: number) => {
         setLoading(true);
         try {
             const response = await fetch(
-                `${environment.apiBaseUrl}/api/stations?lat=${lat}&lon=${lon}&requireHarmonicConstants=true`
+                `${environment.apiBaseUrl}/api/stations?lat=${lat}&lon=${lon}`
             );
 
             if (!response.ok) {
-                // noinspection ExceptionCaughtLocallyJS
-                throw new Error('Failed to fetch stations');
+                setError('Failed to fetch stations');
+                return;
             }
 
             const data = await response.json();
