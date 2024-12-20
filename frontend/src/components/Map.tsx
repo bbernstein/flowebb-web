@@ -188,30 +188,19 @@ function Map({ isLoading = false, userLocation, stations, selectedStationId, onL
                             click: () => onStationSelect(station.id)
                         }}
                     >
-                        {/*<Popup>*/}
-                        {/*    <PopupContent>*/}
-                        {/*        <Typography variant="subtitle2">{station.name}</Typography>*/}
-                        {/*        <Typography variant="body2">{station.state}</Typography>*/}
-                        {/*        {station.region && (*/}
-                        {/*            <Typography variant="body2" color="text.secondary">*/}
-                        {/*                {station.region}*/}
-                        {/*            </Typography>*/}
-                        {/*        )}*/}
-                        {/*        <Typography variant="body2" color="text.secondary">*/}
-                        {/*            Distance: {station.distance.toFixed(1)} km*/}
-                        {/*        </Typography>*/}
-                        {/*        <Stack direction="row" spacing={1} mt={1}>*/}
-                        {/*            {station.capabilities.map((capability) => (*/}
-                        {/*                <Chip*/}
-                        {/*                    key={capability}*/}
-                        {/*                    label={capability.replace('_', ' ')}*/}
-                        {/*                    size="small"*/}
-                        {/*                    variant="outlined"*/}
-                        {/*                />*/}
-                        {/*            ))}*/}
-                        {/*        </Stack>*/}
-                        {/*    </PopupContent>*/}
-                        {/*</Popup>*/}
+                        <Popup>
+                            <PopupContent>
+                                <Typography variant="subtitle2">{station.name}</Typography>
+                                {station.state && (
+                                    <Typography variant="body2" color="text.secondary">
+                                        {station.state}
+                                    </Typography>
+                                )}
+                                <Typography variant="body2" color="text.secondary">
+                                    {station.distance.toFixed(1)} km away
+                                </Typography>
+                            </PopupContent>
+                        </Popup>
                     </Marker>
                 ))}
             </MapContainer>

@@ -15,6 +15,7 @@ import {
 import { styled } from '@mui/material/styles';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { locationStorage } from '@/utils/storage';
+import { TideProvider } from '@/context/TideContext';
 
 type Station = {
     id: string;
@@ -172,7 +173,9 @@ export default function Home() {
                                 {selectedStation.name}
                                 {selectedStation.state && ` (${selectedStation.state})`}
                             </Typography>
-                            <TideInfo stationId={selectedStation.id} />
+                            <TideProvider>
+                                <TideInfo stationId={selectedStation.id} />
+                            </TideProvider>
                         </Box>
                     )}
                 </Box>

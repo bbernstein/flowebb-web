@@ -1,17 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Card, CardContent, Typography, Box, Chip, CircularProgress, Grid2 } from '@mui/material';
+// frontend/src/components/TideInfo.tsx
+import { useEffect } from 'react';
+import { Card, CardContent, Typography, Box, Chip, CircularProgress, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
-
-type TideInfo = {
-    timestamp: number;
-    waterLevel: number;
-    predictedLevel: number;
-    nearestStation: string;
-    location: string;
-    stationDistance: number;
-    tideType: "RISING" | "FALLING" | "HIGH" | "LOW";
-    calculationMethod: "NOAA API";
-};
+import TideChart from "@/components/TideChart";
+import { useTideContext } from '@/context/TideContext';
 
 type TideInfoProps = {
     stationId: string;
@@ -24,39 +16,13 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 export function TideInfo({ stationId }: TideInfoProps) {
-    const [tideData, setTideData] = useState<TideInfo | null>(null);
-    const [error, setError] = useState<string>('');
-    const [loading, setLoading] = useState(true);
-
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const { tideData, loading, error, fetchTideData } = useTideContext();
 
     useEffect(() => {
-        const fetchTideData = async () => {
-            setLoading(true);
-            try {
-                const response = await fetch(
-                    `${apiBaseUrl}/api/tides?stationId=${stationId}`
-                );
-
-                if (!response.ok) {
-                    setError('Failed to fetch tide data');
-                    console.error('Failed to fetch tide data');
-                    return;
-                }
-
-                const data = await response.json();
-                setTideData(data);
-                setError('');
-            } catch (err) {
-                setError('Failed to fetch tide data');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchTideData();
-    }, [stationId, apiBaseUrl]);
+        if (stationId) {
+            fetchTideData(stationId);
+        }
+    }, [stationId, fetchTideData]); // fetchTideData is now memoized
 
     if (loading) {
         return <Box display="flex" justifyContent="center" p={3}><CircularProgress /></Box>;
@@ -67,7 +33,7 @@ export function TideInfo({ stationId }: TideInfoProps) {
     }
 
     if (!tideData) {
-        return null;
+        return <Box display="flex" justifyContent="center" p={3}><CircularProgress /></Box>;
     }
 
     const date = new Date(tideData.timestamp);
@@ -80,6 +46,9 @@ export function TideInfo({ stationId }: TideInfoProps) {
                         <Typography variant="h6">Current Tide Status</Typography>
                         <Typography variant="body2" color="text.secondary">
                             {date.toLocaleString()}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            Station ID: {tideData.nearestStation}
                         </Typography>
                     </Box>
                 </Box>
@@ -96,24 +65,57 @@ export function TideInfo({ stationId }: TideInfoProps) {
                             variant="outlined"
                         />
                     </Box>
-                    <Grid2 container spacing={2}>
-                        <Grid2 size={2}>
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
                             <Box>
                                 <Typography variant="body2" color="text.secondary">Current</Typography>
                                 <Typography variant="subtitle1">
                                     {tideData.waterLevel.toFixed(2)} ft
                                 </Typography>
                             </Box>
-                        </Grid2>
-                        <Grid2 size={2}>
+                        </Grid>
+                        <Grid item xs={6}>
                             <Box>
                                 <Typography variant="body2" color="text.secondary">Predicted</Typography>
                                 <Typography variant="subtitle1">
                                     {tideData.predictedLevel.toFixed(2)} ft
                                 </Typography>
                             </Box>
-                        </Grid2>
-                    </Grid2>
+                        </Grid>
+                    </Grid>
+                </Box>
+
+                <Box mt={3}>
+                    <Typography variant="subtitle2" gutterBottom>
+                        Today's Tides
+                    </Typography>
+                    <Grid container spacing={2}>
+                        {tideData.extremes
+                            .sort((a, b) => a.timestamp - b.timestamp)
+                            .map((extreme, index) => (
+                                <Grid item xs={6} key={index}>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {extreme.type}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            {new Date(extreme.timestamp).toLocaleTimeString([], {
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                hour12: true
+                                            })}
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            {extreme.height.toFixed(2)} ft
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                            ))}
+                    </Grid>
+                </Box>
+
+                <Box mt={3}>
+                    <TideChart />
                 </Box>
             </CardContent>
         </StyledCard>

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
-    "build": "next build",
+    "build": "NEXT_PUBLIC_BUILD_TIME=$(date -u +'%Y-%m-%d %H:%M UTC') NEXT_PUBLIC_VERSION=$npm_package_version next build",
     "start": "next start --port 3000",
     "lint": "next lint"
   },
@@ -14,6 +14,8 @@
     "@mui/icons-material": "^6.2.0",
     "@mui/material": "^6.2.0",
     "@types/leaflet": "^1.9.15",
+    "highcharts": "^12.1.1",
+    "highcharts-react-official": "^3.2.1",
     "leaflet": "^1.9.4",
     "next": "15.1.0",
     "react": "^18.2.0",
