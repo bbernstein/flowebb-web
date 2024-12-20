@@ -187,7 +187,21 @@ function Map({ isLoading = false, userLocation, stations, selectedStationId, onL
                         eventHandlers={{
                             click: () => onStationSelect(station.id)
                         }}
-                    />
+                    >
+                        <Popup>
+                            <PopupContent>
+                                <Typography variant="subtitle2">{station.name}</Typography>
+                                {station.state && (
+                                    <Typography variant="body2" color="text.secondary">
+                                        {station.state}
+                                    </Typography>
+                                )}
+                                <Typography variant="body2" color="text.secondary">
+                                    {station.distance.toFixed(1)} km away
+                                </Typography>
+                            </PopupContent>
+                        </Popup>
+                    </Marker>
                 ))}
             </MapContainer>
         </MapBox>
