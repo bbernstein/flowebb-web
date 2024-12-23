@@ -4,7 +4,6 @@ import { Box, Typography } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import { styled } from '@mui/material/styles';
 import { environment } from "@/config/environment";
-import { useEffect } from "react";
 
 const BuildInfoContainer = styled(Box)(({ theme }) => ({
     position: 'fixed',
@@ -22,16 +21,6 @@ const BuildInfo = () => {
     const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME || 'Development';
     const version = process.env.NEXT_PUBLIC_VERSION || '0.0.1';
     const baseUrl = environment.apiBaseUrl;
-
-    useEffect(() => {
-        console.log('Environment:', {
-            buildTime,
-            version,
-            baseUrl,
-            rawApiUrl: process.env.NEXT_PUBLIC_API_URL,
-            nodeEnv: process.env.NODE_ENV
-        });
-    }, []);
 
     return (
         <BuildInfoContainer>
