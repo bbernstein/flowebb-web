@@ -3,6 +3,7 @@ import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { Box } from '@mui/material';
 import { useTideContext } from '@/context/TideContext';
+import { formatStationTime } from '@/utils/dateTime';
 
 export default function TideChart() {
     const { tideData } = useTideContext();
@@ -10,16 +11,6 @@ export default function TideChart() {
     if (!tideData) {
         return null;
     }
-
-    // Format time for display
-    const timeFormatter = (timestamp: number): string => {
-        const localTime = new Date(timestamp);
-        return localTime.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
-    };
 
     // Calculate the start and end timestamps for midnight last night and midnight tonight
     const now = new Date();
@@ -46,7 +37,10 @@ export default function TideChart() {
             type: 'datetime',
             labels: {
                 formatter: function() {
-                    return timeFormatter(typeof this.value === 'string' ? parseInt(this.value) : this.value);
+                    return formatStationTime(
+                        typeof this.value === 'string' ? parseInt(this.value) : this.value,
+                        tideData.timeZoneOffsetSeconds
+                    );
                 },
                 style: {
                     fontSize: '12px'
@@ -90,8 +84,8 @@ export default function TideChart() {
             formatter: function() {
                 if (this.y === undefined) return '';
                 return `
-                    <b>${timeFormatter(this.x)}</b><br/>
-                    Height: ${this.y.toFixed(2)} ft
+                    <b>${ formatStationTime(this.x, tideData.timeZoneOffsetSeconds) }</b><br/>
+                    Height: ${ this.y.toFixed(2)} ft
                 `;
             }
         },
