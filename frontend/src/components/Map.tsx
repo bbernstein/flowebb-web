@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Box, Typography, CircularProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { formatDistance } from '@/utils/distance';
 
 type Station = {
     id: string;
@@ -190,14 +191,12 @@ function Map({ isLoading = false, userLocation, stations, selectedStationId, onL
                     >
                         <Popup>
                             <PopupContent>
-                                <Typography variant="subtitle2">{station.name}</Typography>
-                                {station.state && (
-                                    <Typography variant="body2" color="text.secondary">
-                                        {station.state}
-                                    </Typography>
-                                )}
+                                <Typography variant="subtitle2">
+                                    {station.name}
+                                    {station.state && ` (${station.state})`}
+                                </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    {station.distance.toFixed(1)} km away
+                                    {formatDistance(station.distance)} away
                                 </Typography>
                             </PopupContent>
                         </Popup>

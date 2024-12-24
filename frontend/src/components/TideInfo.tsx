@@ -4,6 +4,7 @@ import { Card, CardContent, Typography, Box, Chip, CircularProgress, Grid } from
 import { styled } from '@mui/material/styles';
 import TideChart from "@/components/TideChart";
 import { useTideContext } from '@/context/TideContext';
+import { formatStationTime } from '@/utils/dateTime';
 
 type TideInfoProps = {
     stationId: string;
@@ -99,11 +100,7 @@ export function TideInfo({ stationId }: TideInfoProps) {
                                             {extreme.type}
                                         </Typography>
                                         <Typography variant="body2">
-                                            {new Date(extreme.timestamp).toLocaleTimeString([], {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                                hour12: true
-                                            })}
+                                            {formatStationTime(extreme.timestamp, tideData.timeZoneOffsetSeconds)}
                                         </Typography>
                                         <Typography variant="body2">
                                             {extreme.height.toFixed(2)} ft
