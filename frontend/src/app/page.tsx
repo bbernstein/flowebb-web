@@ -27,6 +27,7 @@ type Station = {
     longitude: number;
     source: "NOAA" | "UKHO" | "CHS";
     capabilities: Array<"WATER_LEVEL" | "TIDAL_CURRENTS" | "WATER_TEMPERATURE" | "AIR_TEMPERATURE" | "WIND">;
+    timeZoneOffset: number;
 };
 
 const Map = dynamic(
@@ -64,13 +65,13 @@ export default function Home() {
                     };
                     setLocation(newLocation);
                     locationStorage.set(newLocation);
-                    fetchStations(newLocation.lat, newLocation.lon);
+                    fetchStations(newLocation.lat, newLocation.lon).then();
                 },
                 () => {
                     const defaultLocation = { lat: 47.6062, lon: -122.3321 };
                     setLocation(defaultLocation);
                     locationStorage.set(defaultLocation);
-                    fetchStations(defaultLocation.lat, defaultLocation.lon);
+                    fetchStations(defaultLocation.lat, defaultLocation.lon).then();
                 }
             );
         }
@@ -174,7 +175,7 @@ export default function Home() {
                                 {selectedStation.state && ` (${selectedStation.state})`}
                             </Typography>
                             <TideProvider>
-                                <TideInfo stationId={selectedStation.id} />
+                                <TideInfo stationId={selectedStation.id} timeZoneOffsetSeconds={selectedStation.timeZoneOffset}/>
                             </TideProvider>
                         </Box>
                     )}

@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
@@ -11,16 +13,6 @@ export default function TideChart() {
     if (!tideData) {
         return null;
     }
-
-    // Calculate the start and end timestamps for midnight last night and midnight tonight
-    const now = new Date();
-    const startOfDay = new Date(now.setHours(0, 0, 0, 0)).getTime();
-    const endOfDay = new Date(now.setHours(24, 0, 0, 0)).getTime();
-
-    // Filter the predictions to only include values within the desired range
-    const filteredPredictions = tideData.predictions.filter(
-        p => p.timestamp >= startOfDay && p.timestamp < endOfDay
-    );
 
     const chartOptions: Highcharts.Options = {
         chart: {
@@ -84,8 +76,8 @@ export default function TideChart() {
             formatter: function() {
                 if (this.y === undefined) return '';
                 return `
-                    <b>${ formatStationTime(this.x, tideData.timeZoneOffsetSeconds) }</b><br/>
-                    Height: ${ this.y.toFixed(2)} ft
+                    <b>${formatStationTime(this.x, tideData.timeZoneOffsetSeconds)}</b><br/>
+                    Height: ${this.y.toFixed(2)} ft
                 `;
             }
         },
@@ -107,13 +99,24 @@ export default function TideChart() {
         series: [
             {
                 name: 'Predicted Level',
-                data: filteredPredictions.map(p => [p.timestamp, p.height]),
+                data: tideData.predictions.map(p => [p.timestamp, p.height]),
                 color: '#4A90E2',
                 type: 'spline'
             }
         ],
         credits: {
             enabled: false
+        },
+        accessibility: {
+            // TODO get accessibilty working in nextjs. It seems nontrivial in this case
+            enabled: false,
+            description: 'This chart shows the predicted tide levels over time.',
+            announceNewData: {
+                enabled: true
+            },
+            point: {
+                valueDescriptionFormat: '{index}. {xDescription}, tide height: {value} feet.'
+            }
         }
     };
 
