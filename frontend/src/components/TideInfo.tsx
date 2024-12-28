@@ -1,13 +1,13 @@
-// frontend/src/components/TideInfo.tsx
 import { useEffect } from 'react';
 import { Card, CardContent, Typography, Box, Chip, CircularProgress, Grid } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import TideChart from "@/components/TideChart";
 import { useTideContext } from '@/context/TideContext';
-import { formatStationTime } from '@/utils/dateTime';
+import { formatStationDateTime, getStationDayBounds } from '@/utils/dateTime';
 
 type TideInfoProps = {
     stationId: string;
+    timeZoneOffsetSeconds: number
 };
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -16,14 +16,16 @@ const StyledCard = styled(Card)(({ theme }) => ({
         : theme.palette.grey[50],
 }));
 
-export function TideInfo({ stationId }: TideInfoProps) {
+export function TideInfo({ stationId, timeZoneOffsetSeconds }: TideInfoProps) {
     const { tideData, loading, error, fetchTideData } = useTideContext();
 
     useEffect(() => {
         if (stationId) {
-            fetchTideData(stationId);
+            const now = new Date();
+            const { startOfDay, endOfDay } = getStationDayBounds(now.getTime(), timeZoneOffsetSeconds);
+            fetchTideData(stationId, startOfDay.toISOString(), endOfDay.toISOString()).then();
         }
-    }, [stationId, fetchTideData]); // fetchTideData is now memoized
+    }, [stationId, fetchTideData]);
 
     if (loading) {
         return <Box display="flex" justifyContent="center" p={3}><CircularProgress /></Box>;
@@ -88,7 +90,7 @@ export function TideInfo({ stationId }: TideInfoProps) {
 
                 <Box mt={3}>
                     <Typography variant="subtitle2" gutterBottom>
-                        Today's Tides
+                        Tide Times
                     </Typography>
                     <Grid container spacing={2}>
                         {tideData.extremes
@@ -100,7 +102,7 @@ export function TideInfo({ stationId }: TideInfoProps) {
                                             {extreme.type}
                                         </Typography>
                                         <Typography variant="body2">
-                                            {formatStationTime(extreme.timestamp, tideData.timeZoneOffsetSeconds)}
+                                            {formatStationDateTime(extreme.timestamp, tideData.timeZoneOffsetSeconds)}
                                         </Typography>
                                         <Typography variant="body2">
                                             {extreme.height.toFixed(2)} ft

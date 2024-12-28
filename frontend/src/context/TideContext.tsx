@@ -23,14 +23,14 @@ export interface TideData {
     calculationMethod: string;
     predictions: TidePrediction[];
     extremes: TideExtreme[];
-    timeZoneOffsetSeconds: number | null;
+    timeZoneOffsetSeconds: number;
 }
 
 interface TideContextType {
     tideData: TideData | null;
     loading: boolean;
     error: string | null;
-    fetchTideData: (stationId: string) => Promise<void>;
+    fetchTideData: (stationId: string, startDateTime: string, endDateTime: string) => Promise<void>;
 }
 
 const TideContext = createContext<TideContextType | undefined>(undefined);
@@ -40,11 +40,11 @@ export function TideProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchTideData = useCallback(async (stationId: string) => {
+    const fetchTideData = useCallback(async (stationId: string, startDateTime: string, endDateTime: string) => {
         setLoading(true);
         try {
             const response = await fetch(
-                `${environment.apiBaseUrl}/api/tides?stationId=${stationId}`
+                `${environment.apiBaseUrl}/api/tides?stationId=${stationId}&startDateTime=${startDateTime}&endDateTime=${endDateTime}`
             );
 
             if (!response.ok) {
