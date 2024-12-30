@@ -25,7 +25,7 @@ export function TideInfo({ stationId, timeZoneOffsetSeconds }: TideInfoProps) {
             const { startOfDay, endOfDay } = getStationDayBounds(now.getTime(), timeZoneOffsetSeconds);
             fetchTideData(stationId, startOfDay.toISOString(), endOfDay.toISOString()).then();
         }
-    }, [stationId, fetchTideData]);
+    }, [stationId, fetchTideData, timeZoneOffsetSeconds]);
 
     if (loading) {
         return <Box display="flex" justifyContent="center" p={3}><CircularProgress /></Box>;
