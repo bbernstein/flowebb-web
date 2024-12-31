@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { Card, CardContent, Typography, Box, Chip, CircularProgress, Grid } from '@mui/material';
+import { Box, Card, CardContent, Chip, CircularProgress, Grid, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import TideChart from "@/components/TideChart";
 import { useTideContext } from '@/context/TideContext';
-import { formatStationDateTime, getStationDayBounds } from '@/utils/dateTime';
+import { formatDisplayDateTime, getStationDayBounds } from '@/utils/dateTime';
 
 type TideInfoProps = {
     stationId: string;
@@ -20,10 +20,12 @@ export function TideInfo({ stationId, timeZoneOffsetSeconds }: TideInfoProps) {
     const { tideData, loading, error, fetchTideData } = useTideContext();
 
     useEffect(() => {
-        if (stationId) {
-            const now = new Date();
-            const { startOfDay, endOfDay } = getStationDayBounds(now.getTime(), timeZoneOffsetSeconds);
-            fetchTideData(stationId, startOfDay.toISOString(), endOfDay.toISOString()).then();
+        if (stationId && timeZoneOffsetSeconds !== undefined) {
+            const { startDateTime, endDateTime } = getStationDayBounds(
+                Date.now(),
+                timeZoneOffsetSeconds
+            );
+            fetchTideData(stationId, startDateTime, endDateTime);
         }
     }, [stationId, fetchTideData, timeZoneOffsetSeconds]);
 
@@ -39,8 +41,6 @@ export function TideInfo({ stationId, timeZoneOffsetSeconds }: TideInfoProps) {
         return <Box display="flex" justifyContent="center" p={3}><CircularProgress /></Box>;
     }
 
-    const date = new Date(tideData.timestamp);
-
     return (
         <StyledCard variant="outlined">
             <CardContent>
@@ -48,7 +48,7 @@ export function TideInfo({ stationId, timeZoneOffsetSeconds }: TideInfoProps) {
                     <Box>
                         <Typography variant="h6">Current Tide Status</Typography>
                         <Typography variant="body2" color="text.secondary">
-                            {date.toLocaleString()}
+                            {tideData.localTime}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                             Station ID: {tideData.nearestStation}
@@ -102,7 +102,7 @@ export function TideInfo({ stationId, timeZoneOffsetSeconds }: TideInfoProps) {
                                             {extreme.type}
                                         </Typography>
                                         <Typography variant="body2">
-                                            {formatStationDateTime(extreme.timestamp, tideData.timeZoneOffsetSeconds)}
+                                            {formatDisplayDateTime(extreme.localTime)}
                                         </Typography>
                                         <Typography variant="body2">
                                             {extreme.height.toFixed(2)} ft
