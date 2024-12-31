@@ -11,7 +11,7 @@ import { TideProvider } from '@/context/TideContext';
 import LocationButton from '@/components/LocationButton';
 import { Station } from "@/types";
 
-const TideInfoContainer = styled(Box)(({ }) => ({
+const TideInfoContainer = styled(Box)(({}) => ({
     height: '500px',
     transition: 'all 0.3s ease',
     opacity: 1,
@@ -32,7 +32,7 @@ const MapContainer = styled(Box)(({ theme }) => ({
     height: '400px',
     borderRadius: theme.shape.borderRadius,
     overflow: 'hidden',
-    border: `1px solid ${theme.palette.divider}`,
+    border: `1px solid ${ theme.palette.divider }`,
     marginBottom: theme.spacing(4),
     transition: 'transform 0.3s ease',
 }));
@@ -95,7 +95,7 @@ export default function Home() {
         setLoading(true);
         try {
             const response = await fetch(
-                `${environment.apiBaseUrl}/api/stations?lat=${lat}&lon=${lon}`
+                `${ environment.apiBaseUrl }/api/stations?lat=${ lat }&lon=${ lon }`
             );
 
             if (!response.ok) {
@@ -172,52 +172,54 @@ export default function Home() {
     }, [selectedStationId, loading]);
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Stack spacing={3}>
-                {error && <Alert severity="error">{error}</Alert>}
-
+        <Container maxWidth="lg" sx={ { py: 4 } }>
+            <Stack spacing={ 3 }>
+                { error && <Alert severity="error">{ error }</Alert> }
                 <PageContent>
-                    <Stack spacing={3}>
-                        {/* Title and location button */}
-                        <Stack direction="row" spacing={2} alignItems="center">
-                            <Typography variant="h5" component="h1">
-                                Tide Stations
-                            </Typography>
-                            <LocationButton
-                                onClick={getLocationAndStations}
-                                loading={locationLoading}
-                            />
-                        </Stack>
+                    <Stack spacing={ 5 }>
 
-                        {/* TideInfo with transition */}
-                        <TideInfoContainer className={!displayStation ? 'hidden' : ''}>
-                            {displayStation && (
+                        {/* TideInfo with transition */ }
+                        <TideInfoContainer className={ !displayStation ? 'hidden' : '' }>
+                            { displayStation && (
                                 <Box>
                                     <Typography variant="h6" gutterBottom>
-                                        {displayStation.name}
-                                        {displayStation.state && ` (${displayStation.state})`}
+                                        { displayStation.name }
+                                        { displayStation.state && ` (${ displayStation.state })` }
                                     </Typography>
                                     <TideProvider>
                                         <TideInfo
-                                            stationId={displayStation.id}
-                                            timeZoneOffsetSeconds={displayStation.timeZoneOffset}
+                                            stationId={ displayStation.id }
+                                            timeZoneOffsetSeconds={ displayStation.timeZoneOffset }
                                         />
                                     </TideProvider>
                                 </Box>
-                            )}
+                            ) }
                         </TideInfoContainer>
 
-                        {/* Map - always mounted */}
-                        <MapContainer>
-                            <Map
-                                isLoading={loading}
-                                userLocation={location}
-                                stations={stations}
-                                selectedStationId={selectedStationId}
-                                onLocationSelect={handleMapClick}
-                                onStationSelect={handleStationSelect}
-                            />
-                        </MapContainer>
+                        <Stack direction={ "column" } spacing={ 2 }>
+                            {/* Title and location button */ }
+                            <Stack direction="row" spacing={ 2 } alignItems="center">
+                                <Typography variant="h5" component="h1">
+                                    Tide Stations
+                                </Typography>
+                                <LocationButton
+                                    onClick={ getLocationAndStations }
+                                    loading={ locationLoading }
+                                />
+                            </Stack>
+
+                            {/* Map - always mounted */ }
+                            <MapContainer>
+                                <Map
+                                    isLoading={ loading }
+                                    userLocation={ location }
+                                    stations={ stations }
+                                    selectedStationId={ selectedStationId }
+                                    onLocationSelect={ handleMapClick }
+                                    onStationSelect={ handleStationSelect }
+                                />
+                            </MapContainer>
+                        </Stack>
                     </Stack>
                 </PageContent>
             </Stack>
