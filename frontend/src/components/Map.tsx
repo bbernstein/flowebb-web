@@ -1,8 +1,8 @@
-import { useMemo, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import React, { useEffect, useMemo } from 'react';
+import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Box, Typography, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { formatDistance } from '@/utils/distance';
 
@@ -67,28 +67,41 @@ function MapController({ center, stations }: {
     stations: Station[];
 }) {
     const map = useMap();
+    const prevStationsRef = React.useRef<Station[]>([]);
+    const isFirstRender = React.useRef(true);
 
     useEffect(() => {
-        const points = [
-            [center.lat, center.lon],
-            ...stations.map(station => [station.latitude, station.longitude])
-        ] as [number, number][];
+        // Check if we have genuinely new stations (different IDs)
+        const hasNewStations = stations.some(station =>
+            !prevStationsRef.current.find(prev => prev.id === station.id)
+        );
 
-        if (points.length === 0) return;
+        // Update bounds if it's first render or we have new stations
+        if (isFirstRender.current || hasNewStations) {
+            const points = [
+                [center.lat, center.lon],
+                ...stations.map(station => [station.latitude, station.longitude])
+            ] as [number, number][];
 
-        if (points.length === 1) {
-            map.setView(points[0], 10);
-            return;
+            if (points.length === 0) return;
+
+            if (points.length === 1) {
+                map.setView(points[0], 10);
+            } else {
+                try {
+                    const bounds = L.latLngBounds(points[0], points[0]);
+                    points.slice(1).forEach(point => bounds.extend(point));
+                    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+                } catch (e) {
+                    console.error('Error setting bounds:', e);
+                    map.setView([center.lat, center.lon], 10);
+                }
+            }
+            isFirstRender.current = false;
         }
 
-        try {
-            const bounds = L.latLngBounds(points[0], points[0]);
-            points.slice(1).forEach(point => bounds.extend(point));
-            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
-        } catch (e) {
-            console.error('Error setting bounds:', e);
-            map.setView([center.lat, center.lon], 10);
-        }
+        // Update the ref for next comparison
+        prevStationsRef.current = stations;
     }, [map, center.lat, center.lon, stations]);
 
     return null;

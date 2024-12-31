@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import Highcharts from 'highcharts';
+import Highcharts, { Point } from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { Box } from '@mui/material';
 import { useTideContext } from '@/context/TideContext';
@@ -13,6 +13,46 @@ export default function TideChart() {
     if (!tideData) {
         return null;
     }
+
+    // Create a map of extreme timestamps for easy lookup
+    const extremePoints = new Map(
+        tideData.extremes.map(extreme => [extreme.timestamp, extreme])
+    );
+
+    const mergedData = [
+        ...tideData.predictions.map(p => ({
+            x: p.timestamp,
+            y: p.height,
+            isExtreme: false,
+            type: ''
+        })),
+        ...tideData.extremes.map(e => ({
+            x: e.timestamp,
+            y: e.height,
+            isExtreme: true,
+            type: e.type
+        }))
+    ].sort((a, b) => a.x - b.x);
+
+    const highchartsData = mergedData.map(point => {
+        const highchartsPoint: Highcharts.PointOptionsObject = {
+            x: point.x,
+            y: point.y
+        };
+
+        if (point.isExtreme) {
+            highchartsPoint.marker = {
+                enabled: true,
+                symbol: point.type === 'HIGH' ? 'triangle' : 'triangle-down',
+                radius: 6,
+                fillColor: point.type === 'HIGH' ? '#2E7D32' : '#C62828',
+                lineWidth: 1,
+                lineColor: '#FFFFFF'
+            };
+        }
+
+        return highchartsPoint;
+    });
 
     const chartOptions: Highcharts.Options = {
         chart: {
@@ -73,11 +113,18 @@ export default function TideChart() {
         },
         tooltip: {
             shared: true,
-            formatter: function() {
-                if (this.y === undefined) return '';
+            formatter: function(this: Point) {
+                if (!this || !this.y) return '';
+
+                const extreme = extremePoints.get(this.x);
+                let extraInfo = '';
+                if (extreme) {
+                    extraInfo = `<br/><strong>${extreme.type} Tide</strong>`;
+                }
+
                 return `
                     <b>${formatStationTime(this.x, tideData.timeZoneOffsetSeconds)}</b><br/>
-                    Height: ${this.y.toFixed(2)} ft
+                    Height: ${this.y.toFixed(2)} ft${extraInfo}
                 `;
             }
         },
@@ -85,7 +132,7 @@ export default function TideChart() {
             spline: {
                 marker: {
                     enabled: false
-                }
+                },
             },
             series: {
                 states: {
@@ -96,19 +143,16 @@ export default function TideChart() {
                 }
             }
         },
-        series: [
-            {
-                name: 'Predicted Level',
-                data: tideData.predictions.map(p => [p.timestamp, p.height]),
-                color: '#4A90E2',
-                type: 'spline'
-            }
-        ],
+        series: [{
+            name: 'Predicted Level',
+            type: 'spline',
+            color: '#4A90E2',
+            data: highchartsData
+        }],
         credits: {
             enabled: false
         },
         accessibility: {
-            // TODO get accessibilty working in nextjs. It seems nontrivial in this case
             enabled: false,
             description: 'This chart shows the predicted tide levels over time.',
             announceNewData: {
