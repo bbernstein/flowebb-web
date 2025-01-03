@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import Highcharts, { Point } from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
@@ -14,12 +12,30 @@ export default function TideChart() {
         return null;
     }
 
-    // Create a map of extreme timestamps for easy lookup
-    const extremePoints = new Map(
-        tideData.extremes.map(extreme => [extreme.timestamp, extreme])
-    );
+    // Function to find the nearest extreme point within a threshold
+    const findNearestExtreme = (timestamp: number, threshold: number = 900000) => { // 30 minutes in milliseconds
+        let nearestExtreme = null;
+        let minDistance = threshold;
 
-    const mergedData = [
+        for (const extreme of tideData.extremes) {
+            const distance = Math.abs(extreme.timestamp - timestamp);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestExtreme = extreme;
+            }
+        }
+
+        return nearestExtreme;
+    };
+
+    interface CustomPoint {
+        x: number;
+        y: number;
+        isExtreme: boolean;
+        type: string;
+    }
+
+    const mergedData: CustomPoint[] = [
         ...tideData.predictions.map(p => ({
             x: p.timestamp,
             y: p.height,
@@ -34,25 +50,19 @@ export default function TideChart() {
         }))
     ].sort((a, b) => a.x - b.x);
 
-    const highchartsData = mergedData.map(point => {
-        const highchartsPoint: Highcharts.PointOptionsObject = {
-            x: point.x,
-            y: point.y
-        };
-
-        if (point.isExtreme) {
-            highchartsPoint.marker = {
-                enabled: true,
-                symbol: point.type === 'HIGH' ? 'triangle' : 'triangle-down',
-                radius: 6,
-                fillColor: point.type === 'HIGH' ? '#2E7D32' : '#C62828',
-                lineWidth: 1,
-                lineColor: '#FFFFFF'
-            };
-        }
-
-        return highchartsPoint;
-    });
+    const highchartsData = mergedData.map(point => ({
+        x: point.x,
+        y: point.y,
+        id: point.isExtreme ? `extreme-${point.x}` : undefined,
+        marker: point.isExtreme ? {
+            enabled: true,
+            symbol: point.type === 'HIGH' ? 'triangle' : 'triangle-down',
+            radius: 6,
+            fillColor: point.type === 'HIGH' ? '#2E7D32' : '#C62828',
+            lineWidth: 1,
+            lineColor: '#FFFFFF'
+        } : undefined
+    }));
 
     const chartOptions: Highcharts.Options = {
         chart: {
@@ -60,6 +70,13 @@ export default function TideChart() {
             height: 300,
             style: {
                 fontFamily: 'var(--font-geist-sans)'
+            },
+            events: {
+                render: function() {
+                    // Remove any existing custom crosshair
+                    const axis = this.xAxis[0];
+                    axis.removePlotLine('custom-crosshair');
+                }
             }
         },
         title: {
@@ -78,7 +95,7 @@ export default function TideChart() {
                     fontSize: '12px'
                 }
             },
-            crosshair: true,
+            crosshair: false, // Disable default crosshair
             tickInterval: 4 * 3600 * 1000, // 4 hours
             plotLines: [{
                 color: '#FF4444',
@@ -113,32 +130,92 @@ export default function TideChart() {
         },
         tooltip: {
             shared: true,
+            snap: 0,  // Disable default snapping
             formatter: function(this: Point) {
-                if (!this || !this.y) return '';
+                if (!this || !this.x) return '';
 
-                const extreme = extremePoints.get(this.x);
-                let extraInfo = '';
-                if (extreme) {
-                    extraInfo = `<br/><strong>${extreme.type} Tide</strong>`;
+                // Check if we're near an extreme point
+                const nearestExtreme = findNearestExtreme(this.x);
+                if (nearestExtreme) {
+                    // If near an extreme, show that point's data instead
+                    return `
+                        <b>${formatStationTime(nearestExtreme.timestamp, tideData.timeZoneOffsetSeconds)}</b><br/>
+                        Height: ${nearestExtreme.height.toFixed(2)} ft<br/>
+                        <strong>${nearestExtreme.type} Tide</strong>
+                    `;
                 }
 
+                // Default tooltip for regular points
                 return `
                     <b>${formatStationTime(this.x, tideData.timeZoneOffsetSeconds)}</b><br/>
-                    Height: ${this.y.toFixed(2)} ft${extraInfo}
+                    Height: ${(this.y || 0).toFixed(2)} ft
                 `;
+            },
+            positioner: function(labelWidth, labelHeight, point) {
+                // Find nearest extreme point
+                const nearestExtreme = findNearestExtreme(point.x);
+                if (nearestExtreme) {
+                    // If near an extreme, position tooltip over the extreme point
+                    const extremePoint = this.chart.get(`extreme-${nearestExtreme.timestamp}`) as Highcharts.Point;
+                    if (extremePoint?.plotX != null && extremePoint?.plotY != null) {
+                        return {
+                            x: extremePoint.plotX + this.chart.plotLeft - labelWidth / 2,
+                            y: extremePoint.plotY + this.chart.plotTop - labelHeight - 10
+                        };
+                    }
+                }
+
+                // Default positioning
+                return {
+                    x: point.plotX + this.chart.plotLeft - labelWidth / 2,
+                    y: point.plotY + this.chart.plotTop - labelHeight - 10
+                };
             }
         },
         plotOptions: {
-            spline: {
-                marker: {
-                    enabled: false
-                },
-            },
             series: {
                 states: {
                     hover: {
                         enabled: true,
                         lineWidth: 2
+                    }
+                },
+                point: {
+                    events: {
+                        mouseOver: function() {
+                            const nearestExtreme = findNearestExtreme(this.x);
+                            if (nearestExtreme) {
+                                // If near an extreme, update crosshair and tooltip
+                                const extremePoint = this.series.chart.get(`extreme-${nearestExtreme.timestamp}`) as Highcharts.Point;
+                                if (extremePoint && extremePoint !== this) {
+                                    // Add a custom crosshair at the extreme point
+                                    const xAxis = this.series.chart.xAxis[0];
+                                    xAxis.removePlotLine('custom-crosshair');
+                                    xAxis.addPlotLine({
+                                        value: nearestExtreme.timestamp,
+                                        color: '#666666',
+                                        width: 1,
+                                        id: 'custom-crosshair',
+                                        zIndex: 5
+                                    });
+
+                                    // Update tooltip
+                                    this.series.chart.tooltip.refresh(extremePoint);
+                                }
+                                return false; // Prevent default hover behavior
+                            }
+
+                            // If not near an extreme, show regular crosshair
+                            const xAxis = this.series.chart.xAxis[0];
+                            xAxis.removePlotLine('custom-crosshair');
+                            xAxis.addPlotLine({
+                                value: this.x,
+                                color: '#666666',
+                                width: 1,
+                                id: 'custom-crosshair',
+                                zIndex: 5
+                            });
+                        }
                     }
                 }
             }
@@ -151,16 +228,6 @@ export default function TideChart() {
         }],
         credits: {
             enabled: false
-        },
-        accessibility: {
-            enabled: false,
-            description: 'This chart shows the predicted tide levels over time.',
-            announceNewData: {
-                enabled: true
-            },
-            point: {
-                valueDescriptionFormat: '{index}. {xDescription}, tide height: {value} feet.'
-            }
         }
     };
 
