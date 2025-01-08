@@ -109,6 +109,18 @@ export default function Home() {
             setLocation({ lat, lon });
             setStations(stations);
             setError('');
+
+            // Automatically select the nearest station
+            if (stations.length > 0) {
+                const nearestStation = stations[0];
+                setSelectedStationId(nearestStation.id);
+                setDisplayStationId(nearestStation.id);
+                stationStorage.set({
+                    id: nearestStation.id,
+                    name: nearestStation.name,
+                    timeZoneOffset: nearestStation.timeZoneOffset
+                });
+            }
         } catch (err) {
             setError('Failed to fetch nearby stations');
             console.error(err);
@@ -150,6 +162,7 @@ export default function Home() {
 
     const handleStationSelect = (stationId: string) => {
         setSelectedStationId(stationId);
+        setDisplayStationId(stationId);
         if (displayStationId === null) {
             setDisplayStationId(stationId);
         }
