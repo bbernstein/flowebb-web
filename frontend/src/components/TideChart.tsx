@@ -35,6 +35,12 @@ export default function TideChart() {
         type: string;
     }
 
+    if (!tideData.predictions) {
+        tideData.predictions = [];
+    }
+    if (!tideData.extremes) {
+        tideData.extremes = [];
+    }
     const mergedData: CustomPoint[] = [
         ...tideData.predictions.map(p => ({
             x: p.timestamp,
@@ -228,6 +234,16 @@ export default function TideChart() {
         }],
         credits: {
             enabled: false
+        },
+        accessibility: {
+            enabled: false,
+            description: 'This chart shows the predicted tide levels over time.',
+            announceNewData: {
+                enabled: true
+            },
+            point: {
+                valueDescriptionFormat: '{index}. {xDescription}, tide height: {value} feet.'
+            }
         }
     };
 

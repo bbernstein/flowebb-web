@@ -68,38 +68,37 @@ const MapController = ({ center, stations }: { center: { lat: number; lon: numbe
     const isFirstRender = React.useRef(true);
 
     useEffect(() => {
-        // Check if we have genuinely new stations
-        const hasNewStations = stations.some(station =>
-            !prevStationsRef.current.find(prev => prev.id === station.id)
+        if (!map || !center) return;
+
+        const hasNewStations = stations?.some(station =>
+            !prevStationsRef.current?.find(prev => prev.id === station.id)
         );
 
-        // Update bounds if it's first render or we have new stations
         if (isFirstRender.current || hasNewStations) {
             const points = [
                 [center.lat, center.lon],
-                ...stations?.map(station => [station.latitude, station.longitude])
+                ...(stations || []).map(station => [station.latitude, station.longitude])
             ] as [number, number][];
 
-            if (points.length === 0) return;
+            if (!points.length) return;
 
-            if (points.length === 1) {
-                map.setView(points[0], 10);
-            } else {
-                try {
+            try {
+                if (points.length === 1) {
+                    map.setView(points[0], 10);
+                } else {
                     const bounds = L.latLngBounds(points[0], points[0]);
                     points.slice(1).forEach(point => bounds.extend(point));
                     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
-                } catch (e) {
-                    console.error('Error setting bounds:', e);
-                    map.setView([center.lat, center.lon], 10);
                 }
+                isFirstRender.current = false;
+            } catch (e) {
+                console.error('Error setting map view:', e);
+                map.setView([center.lat, center.lon], 10);
             }
-            isFirstRender.current = false;
         }
 
-        // Update the ref for next comparison
-        prevStationsRef.current = stations;
-    }, [map, center.lat, center.lon, stations]);
+        prevStationsRef.current = stations || [];
+    }, [map, center, stations]); // Added center to dependencies
 
     return null;
 }
@@ -121,6 +120,7 @@ function Map({
                  onLocationSelect,
                  onStationSelect
              }: MapProps) {
+    // Move all hooks to the top, before any conditional returns
     const icons = useMemo(() => ({
         user: new L.DivIcon({
             html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="24" height="36">
@@ -156,6 +156,7 @@ function Map({
 
     const mapId = useMemo(() => `map-${ Math.random() }`, []);
 
+    // Early return after hooks
     if (!userLocation) {
         return (
             <MapBox>
@@ -179,7 +180,7 @@ function Map({
                 key={ mapId }
                 className="leaflet-crosshair"
             >
-                <MapController center={ userLocation } stations={ stations }/>
+                <MapController center={ userLocation } stations={ stations || [] }/>
                 <MapClickHandler onLocationSelect={ onLocationSelect }/>
 
                 <TileLayer

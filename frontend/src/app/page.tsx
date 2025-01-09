@@ -185,63 +185,64 @@ export default function Home() {
     }, [selectedStationId, loading]);
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-            <Stack spacing={3}>
-                {error && <Alert severity="error">{error}</Alert>}
+        <Container maxWidth="lg" sx={ { py: 4 } }>
+            <Stack spacing={ 3 }>
+                { error && <Alert severity="error">{ error }</Alert> }
 
-                {/* Add loading check here */}
-                {loading ? (
+                {/* Add loading check here */ }
+                { loading ? (
                     <Box display="flex" justifyContent="center" alignItems="center" height="400px">
-                        <CircularProgress />
+                        <CircularProgress/>
                     </Box>
                 ) : (
                     <PageContent>
-                        <Stack spacing={5}>
-                            {/* TideInfo with transition */}
-                            <TideInfoContainer className={!displayStation ? 'hidden' : ''}>
-                                {displayStation && (
+                        <Stack spacing={ 5 }>
+                            {/* TideInfo with transition */ }
+                            <TideInfoContainer className={ !displayStation ? 'hidden' : '' }>
+                                { displayStation && (
                                     <Box>
                                         <Typography variant="h6" gutterBottom>
-                                            {displayStation.name}
-                                            {displayStation.state && ` (${displayStation.state})`}
+                                            { displayStation.name }
+                                            { displayStation.state && ` (${ displayStation.state })` }
                                         </Typography>
                                         <TideProvider>
                                             <TideInfo
-                                                stationId={displayStation.id}
-                                                timeZoneOffsetSeconds={displayStation.timeZoneOffset}
+                                                stationId={ displayStation.id }
+                                                timeZoneOffsetSeconds={ displayStation.timeZoneOffset }
                                             />
                                         </TideProvider>
                                     </Box>
-                                )}
+                                ) }
                             </TideInfoContainer>
 
-                            <Stack direction={"column"} spacing={2}>
-                                {/* Title and location button */}
-                                <Stack direction="row" spacing={2} alignItems="center">
+                            <Stack direction={ "column" } spacing={ 2 }>
+                                {/* Title and location button */ }
+                                <Stack direction="row" spacing={ 2 } alignItems="center">
                                     <Typography variant="h5" component="h1">
                                         Tide Stations
                                     </Typography>
                                     <LocationButton
-                                        onClick={getLocationAndStations}
-                                        loading={locationLoading}
+                                        onClick={ getLocationAndStations }
+                                        loading={ locationLoading }
                                     />
                                 </Stack>
 
-                                {/* Map - always mounted */}
-                                <MapContainer>
-                                    <Map
-                                        isLoading={loading}
-                                        userLocation={location}
-                                        stations={stations}
-                                        selectedStationId={selectedStationId}
-                                        onLocationSelect={handleMapClick}
-                                        onStationSelect={handleStationSelect}
-                                    />
-                                </MapContainer>
+                                { !loading && location && (
+                                    <MapContainer>
+                                        <Map
+                                            isLoading={ loading }
+                                            userLocation={ location }
+                                            stations={ stations || [] } // Provide empty array fallback
+                                            selectedStationId={ selectedStationId }
+                                            onLocationSelect={ handleMapClick }
+                                            onStationSelect={ handleStationSelect }
+                                        />
+                                    </MapContainer>
+                                ) }
                             </Stack>
                         </Stack>
                     </PageContent>
-                )}
+                ) }
             </Stack>
         </Container>
     );
