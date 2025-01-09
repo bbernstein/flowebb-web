@@ -1,21 +1,21 @@
 
-const formatTimeZoneOffset = (offsetSeconds: number): string => {
-    const sign = offsetSeconds >= 0 ? '+' : '-';
-    const absOffset = Math.abs(offsetSeconds);
-    const hours = Math.floor(absOffset / 3600).toString().padStart(2, '0');
-    const minutes = ((absOffset % 3600) / 60).toString().padStart(2, '0');
-    return `${sign}${hours}:${minutes}`;
+/**
+ * Formats a time in a timezone-aware way, handling Node version compatibility
+ */
+const formatTimeWithTimezone = (date: Date, offsetSeconds: number): string => {
+    // Create a new date adjusted for the timezone offset
+    const localDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60 * 1000) + (offsetSeconds * 1000));
+
+    return localDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
 };
 
 export const formatTime = (timestamp: number, timeZoneOffsetSeconds: number): string => {
     const date = new Date(timestamp);
-    const timeZone = formatTimeZoneOffset(timeZoneOffsetSeconds);
-    return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-        timeZone: timeZone
-    });
+    return formatTimeWithTimezone(date, timeZoneOffsetSeconds);
 };
 
 /**
@@ -26,8 +26,8 @@ export const formatTime = (timestamp: number, timeZoneOffsetSeconds: number): st
  */
 export const formatStationTime = (timestamp: number, offsetSeconds: number | null): string => {
     if (offsetSeconds !== null) {
-        // Convert to station's timezone
-        return formatTime(timestamp, offsetSeconds);
+        const date = new Date(timestamp);
+        return formatTimeWithTimezone(date, offsetSeconds);
     }
     const date = new Date(timestamp);
     return date.toLocaleTimeString();
@@ -43,8 +43,8 @@ export const formatStationDateTime = (timestamp: number, offsetSeconds: number |
     const date = new Date(timestamp);
     if (offsetSeconds !== null) {
         // Convert to station's timezone
-        const utcDate = new Date(date.getTime() + date.getTimezoneOffset() * 60 * 1000);
-        return new Date(utcDate.getTime() + offsetSeconds * 1000).toLocaleString('en-US', {
+        const localDate = new Date(date.getTime() + (date.getTimezoneOffset() * 60 * 1000) + (offsetSeconds * 1000));
+        return localDate.toLocaleString('en-US', {
             weekday: 'short',
             day: '2-digit',
             month: 'short',
