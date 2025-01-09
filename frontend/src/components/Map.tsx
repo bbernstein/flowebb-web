@@ -20,7 +20,7 @@ type Station = {
 
 type MapProps = {
     isLoading?: boolean;
-    userLocation: {lat: number; lon: number} | null;
+    userLocation: { lat: number; lon: number } | null;
     stations: Station[];
     selectedStationId: string | null;
     onLocationSelect: (lat: number, lon: number) => void;
@@ -62,16 +62,13 @@ const PopupContent = styled(Box)(({ theme }) => ({
     },
 }));
 
-function MapController({ center, stations }: {
-    center: {lat: number; lon: number};
-    stations: Station[];
-}) {
+const MapController = ({ center, stations }: { center: { lat: number; lon: number }; stations: Station[] }) => {
     const map = useMap();
     const prevStationsRef = React.useRef<Station[]>([]);
     const isFirstRender = React.useRef(true);
 
     useEffect(() => {
-        // Check if we have genuinely new stations (different IDs)
+        // Check if we have genuinely new stations
         const hasNewStations = stations.some(station =>
             !prevStationsRef.current.find(prev => prev.id === station.id)
         );
@@ -80,7 +77,7 @@ function MapController({ center, stations }: {
         if (isFirstRender.current || hasNewStations) {
             const points = [
                 [center.lat, center.lon],
-                ...stations.map(station => [station.latitude, station.longitude])
+                ...stations?.map(station => [station.latitude, station.longitude])
             ] as [number, number][];
 
             if (points.length === 0) return;
@@ -116,7 +113,14 @@ function MapClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number,
     return null;
 }
 
-function Map({ isLoading = false, userLocation, stations, selectedStationId, onLocationSelect, onStationSelect }: MapProps) {
+function Map({
+                 isLoading = false,
+                 userLocation,
+                 stations,
+                 selectedStationId,
+                 onLocationSelect,
+                 onStationSelect
+             }: MapProps) {
     const icons = useMemo(() => ({
         user: new L.DivIcon({
             html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="24" height="36">
@@ -150,71 +154,71 @@ function Map({ isLoading = false, userLocation, stations, selectedStationId, onL
         }),
     }), []);
 
-    const mapId = useMemo(() => `map-${Math.random()}`, []);
+    const mapId = useMemo(() => `map-${ Math.random() }`, []);
 
     if (!userLocation) {
         return (
             <MapBox>
                 <LoadingOverlay>
-                    <CircularProgress />
+                    <CircularProgress/>
                 </LoadingOverlay>
             </MapBox>
         );
     }
 
     return (
-        <MapBox id={mapId}>
-            {isLoading && (
+        <MapBox id={ mapId }>
+            { isLoading && (
                 <LoadingOverlay>
-                    <CircularProgress />
+                    <CircularProgress/>
                 </LoadingOverlay>
-            )}
+            ) }
             <MapContainer
-                center={[userLocation.lat, userLocation.lon]}
-                zoom={10}
-                key={mapId}
+                center={ [userLocation.lat, userLocation.lon] }
+                zoom={ 10 }
+                key={ mapId }
                 className="leaflet-crosshair"
             >
-                <MapController center={userLocation} stations={stations} />
-                <MapClickHandler onLocationSelect={onLocationSelect} />
+                <MapController center={ userLocation } stations={ stations }/>
+                <MapClickHandler onLocationSelect={ onLocationSelect }/>
 
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
-                <Marker position={[userLocation.lat, userLocation.lon]} icon={icons.user}>
+                <Marker position={ [userLocation.lat, userLocation.lon] } icon={ icons.user }>
                     <Popup>
                         <PopupContent>
                             <Typography variant="subtitle2">Selected Location</Typography>
-                            <Typography variant="body2">Lat: {userLocation.lat.toFixed(4)}</Typography>
-                            <Typography variant="body2">Lon: {userLocation.lon.toFixed(4)}</Typography>
+                            <Typography variant="body2">Lat: { userLocation.lat.toFixed(4) }</Typography>
+                            <Typography variant="body2">Lon: { userLocation.lon.toFixed(4) }</Typography>
                         </PopupContent>
                     </Popup>
                 </Marker>
 
-                {stations.map((station) => (
+                { stations?.map((station) => (
                     <Marker
-                        key={station.id}
-                        position={[station.latitude, station.longitude]}
-                        icon={station.id === selectedStationId ? icons.selectedStation : icons.station}
-                        eventHandlers={{
+                        key={ station.id }
+                        position={ [station.latitude, station.longitude] }
+                        icon={ station.id === selectedStationId ? icons.selectedStation : icons.station }
+                        eventHandlers={ {
                             click: () => onStationSelect(station.id)
-                        }}
+                        } }
                     >
                         <Popup>
                             <PopupContent>
                                 <Typography variant="subtitle2">
-                                    {station.name}
-                                    {station.state && ` (${station.state})`}
+                                    { station.name }
+                                    { station.state && ` (${ station.state })` }
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    {formatDistance(station.distance)} away
+                                    { formatDistance(station.distance) } away
                                 </Typography>
                             </PopupContent>
                         </Popup>
                     </Marker>
-                ))}
+                )) }
             </MapContainer>
         </MapBox>
     );
