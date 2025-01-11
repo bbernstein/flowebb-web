@@ -34,7 +34,15 @@ export function TideInfo({ stationId, timeZoneOffsetSeconds }: TideInfoProps) {
     }
 
     if (error) {
-        return <Typography color="error" variant="body2">{ error }</Typography>;
+        return (
+            <StyledCard variant="outlined">
+                <CardContent>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <Typography color="error" variant="body1">{ error }</Typography>
+                    </Box>
+                </CardContent>
+            </StyledCard>
+        );
     }
 
     if (!tideData) {

@@ -58,7 +58,11 @@ export const TideProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const response = await fetch(url.toString());
 
             if (!response.ok) {
-                setError('Failed to fetch tide data');
+                if (response.status === 502) {
+                    setError('Unable to fetch tide data from NOAA. The station may not be reporting properly at the moment.');
+                } else {
+                    setError('Failed to fetch tide data');
+                }
                 return;
             }
 
