@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { TideInfo } from '@/components/TideInfo';
 import { environment } from '@/config/environment';
 import { Alert, Box, CircularProgress, Container, Stack, Typography } from '@mui/material';
@@ -41,6 +42,17 @@ const Map = dynamic(
     () => import('@/components/Map'),
     { ssr: false }
 );
+
+// Add this styled component for the logo
+const LogoContainer = styled(Box)(({ theme }) => ({
+    width: '90px', // Adjusted to maintain aspect ratio with 30px height (300:100 = 90:30)
+    margin: '0 auto',
+    padding: theme.spacing(1), // Reduced padding
+    marginTop: theme.spacing(2), // This plus the Container's py will give us roughly 50px total
+    '@media (max-width: 600px)': {
+        width: '75px', // Proportionally smaller for mobile
+    },
+}));
 
 export default function Home() {
     const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
@@ -186,7 +198,17 @@ export default function Home() {
 
     return (
         <Container maxWidth="lg" sx={ { py: 4 } }>
-            <Stack spacing={ 3 }>
+            <Stack spacing={ 1 }>
+                <LogoContainer>
+                    <Image
+                        src="/logo-animated.svg"
+                        alt="Flow Ebb Logo"
+                        width={ 200 }
+                        height={ 50 }
+                        priority
+                    />
+                </LogoContainer>
+
                 { error && <Alert severity="error">{ error }</Alert> }
 
                 {/* Add loading check here */ }
