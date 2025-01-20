@@ -204,7 +204,7 @@ export default function Home() {
                         src="/logo-animated.svg"
                         alt="Flow Ebb Logo"
                         width={ 200 }
-                        height={ 50 }
+                        height={ 75 }
                         priority
                     />
                 </LogoContainer>
