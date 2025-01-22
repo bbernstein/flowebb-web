@@ -67,6 +67,10 @@ export const TideProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             const data = await response.json();
+            // Preserve the timeZoneOffsetSeconds from previous data if not in new data
+            if (data && !data.timeZoneOffsetSeconds && tideData?.timeZoneOffsetSeconds) {
+                data.timeZoneOffsetSeconds = tideData.timeZoneOffsetSeconds;
+            }
             setTideData(data);
             setError(null);
         } catch (err) {
@@ -75,7 +79,7 @@ export const TideProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [tideData?.timeZoneOffsetSeconds]);
 
     return (
         <TideContext.Provider value={{ tideData, loading, error, fetchTideData }}>

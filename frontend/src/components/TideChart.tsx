@@ -1,13 +1,43 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Highcharts, { Point } from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { Box } from '@mui/material';
 import { useTideContext } from '@/context/TideContext';
-import { formatStationTime } from '@/utils/dateTime';
+import { formatStationTime, getStationDayBounds } from '@/utils/dateTime';
 
 export default function TideChart() {
-    const { tideData } = useTideContext();
+    const { tideData, fetchTideData } = useTideContext();
+    const [currentTime, setCurrentTime] = useState<number>(Date.now());
 
+    useEffect(() => {
+        // Update current time every minute
+        const timer = setInterval(() => {
+            const newTime = Date.now();
+            setCurrentTime(newTime);
+
+            // Check if we've crossed a 6-hour boundary
+            const oldDate = new Date(currentTime);
+            const newDate = new Date(newTime);
+
+            const oldHour = oldDate.getHours();
+            const newHour = newDate.getHours();
+
+            // If we've crossed a 6-hour boundary (0, 6, 12, 18)
+            if (Math.floor(oldHour / 6) !== Math.floor(newHour / 6)) {
+                // Refresh the tide data
+                if (tideData?.nearestStation) {
+                    const { startDateTime, endDateTime } = getStationDayBounds(
+                        newTime,
+                        tideData.timeZoneOffsetSeconds
+                    );
+                    fetchTideData(tideData.nearestStation, startDateTime, endDateTime);
+                }
+            }
+        }, 60000); // Update every minute
+
+        return () => clearInterval(timer);
+    }, [currentTime, tideData, fetchTideData]);
+    
     if (!tideData) {
         return null;
     }
@@ -106,7 +136,7 @@ export default function TideChart() {
             plotLines: [{
                 color: '#FF4444',
                 width: 2,
-                value: tideData.timestamp,
+                value: currentTime,
                 zIndex: 3,
                 label: {
                     text: 'Current Time',
