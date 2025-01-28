@@ -4,13 +4,12 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { TideInfo } from '@/components/TideInfo';
-import { environment } from '@/config/environment';
 import { Alert, Box, CircularProgress, Container, Stack, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { locationStorage, stationStorage } from '@/utils/storage';
 import { TideProvider } from '@/context/TideContext';
 import LocationButton from '@/components/LocationButton';
-import { Station } from "@/types";
+import { useStationContext } from "@/context/StationContext";
 
 const TideInfoContainer = styled(Box)(({}) => ({
     height: '500px',
@@ -56,12 +55,13 @@ const LogoContainer = styled(Box)(({ theme }) => ({
 
 export default function Home() {
     const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
-    const [stations, setStations] = useState<Station[]>([]);
+    // const [stations, setStations] = useState<Station[]>([]);
     const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
     const [displayStationId, setDisplayStationId] = useState<string | null>(null);
     const [error, setError] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [locationLoading, setLocationLoading] = useState(false);
+    const { stations, fetchStations } = useStationContext();
 
     useEffect(() => {
         const storedStation = stationStorage.get();
@@ -69,12 +69,15 @@ export default function Home() {
 
         if (storedLocation) {
             setLocation(storedLocation);
-            fetchStations(storedLocation.lat, storedLocation.lon).then(() => {
-                if (storedStation) {
-                    setSelectedStationId(storedStation.id);
-                    setDisplayStationId(storedStation.id);
-                }
-            });
+            fetchStations(storedLocation.lat, storedLocation.lon)
+                .then(() => {
+                    setLoading(false);
+                    if (storedStation) {
+                        setSelectedStationId(storedStation.id);
+                        setDisplayStationId(storedStation.id);
+                    }
+                })
+                .catch(console.error);
         } else if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -84,61 +87,47 @@ export default function Home() {
                     };
                     setLocation(newLocation);
                     locationStorage.set(newLocation);
-                    fetchStations(newLocation.lat, newLocation.lon).then();
+                    fetchStations(newLocation.lat, newLocation.lon).then(() => {});
                 },
                 () => {
                     const defaultLocation = { lat: 47.6062, lon: -122.3321 };
                     setLocation(defaultLocation);
                     locationStorage.set(defaultLocation);
-                    fetchStations(defaultLocation.lat, defaultLocation.lon).then();
+                    fetchStations(defaultLocation.lat, defaultLocation.lon).then(() => {});
                 }
             );
         }
-    }, []);
+    }, [fetchStations]);
 
-    const handleMapClick = (lat: number, lon: number) => {
-        setSelectedStationId(null);
-        setDisplayStationId(null);
-        locationStorage.set({ lat, lon });
-        fetchStations(lat, lon).then();
-    };
-
-    const fetchStations = async (lat: number, lon: number) => {
-        setLoading(true);
+    const handleMapClick = async (lat: number, lon: number) => {
         try {
-            const response = await fetch(
-                `${ environment.apiBaseUrl }/api/stations?lat=${ lat }&lon=${ lon }`
-            );
+            // First fetch the stations to ensure we have them before updating state
+            const newLocation = { lat, lon };
+            const newStations = await fetchStations(lat, lon);
 
-            if (!response.ok) {
-                setError('Failed to fetch stations');
-                return;
-            }
+            // Then update all state together
+            setLocation(newLocation);
+            locationStorage.set(newLocation);
 
-            const data = await response.json();
-            const stations = data.stations || [];
-
-            setLocation({ lat, lon });
-            setStations(stations);
-            setError('');
-
-            // Automatically select the nearest station
-            if (stations.length > 0) {
-                const nearestStation = stations[0];
-                setSelectedStationId(nearestStation.id);
-                setDisplayStationId(nearestStation.id);
+            if (newStations.length > 0) {
+                // Set both station IDs in the same render cycle
+                setSelectedStationId(newStations[0].id);
+                setDisplayStationId(newStations[0].id);
+                // Update storage
+                const selectedStation = newStations[0];
                 stationStorage.set({
-                    id: nearestStation.id,
-                    name: nearestStation.name,
-                    timeZoneOffset: nearestStation.timeZoneOffset
+                    id: selectedStation.id,
+                    name: selectedStation.name,
+                    timeZoneOffset: selectedStation.timeZoneOffset
                 });
+            } else {
+                // Only clear station selection if no stations found
+                setSelectedStationId(null);
+                setDisplayStationId(null);
             }
-        } catch (err) {
-            setError('Failed to fetch nearby stations');
-            console.error(err);
-        } finally {
-            setLoading(false);
-            setLocationLoading(false);
+        } catch (error) {
+            console.error('Error handling map click:', error);
+            setError('Failed to load stations');
         }
     };
 
@@ -158,7 +147,7 @@ export default function Home() {
                 setSelectedStationId(null);
                 setDisplayStationId(null);
                 locationStorage.set(newLocation);
-                fetchStations(newLocation.lat, newLocation.lon).then();
+                fetchStations(newLocation.lat, newLocation.lon).then(() => {});
             },
             () => {
                 setError('Unable to retrieve your location');
@@ -178,6 +167,7 @@ export default function Home() {
         if (displayStationId === null) {
             setDisplayStationId(stationId);
         }
+
         const selectedStation = stations.find(station => station.id === stationId);
         if (selectedStation) {
             stationStorage.set({
@@ -189,12 +179,6 @@ export default function Home() {
     };
 
     const displayStation = stations.find(station => station.id === displayStationId);
-
-    useEffect(() => {
-        if (selectedStationId && !loading) {
-            setDisplayStationId(selectedStationId);
-        }
-    }, [selectedStationId, loading]);
 
     return (
         <Container maxWidth="lg" sx={ { py: 4 } }>

@@ -16,11 +16,13 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@apollo/client": "^3.12.7",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^6.2.0",
     "@mui/material": "^6.2.0",
     "@types/leaflet": "^1.9.15",
+    "graphql": "^16.10.0",
     "highcharts": "^12.1.1",
     "highcharts-accessibility": "^0.1.7",
     "highcharts-react-official": "^3.2.1",

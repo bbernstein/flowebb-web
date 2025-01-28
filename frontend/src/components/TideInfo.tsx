@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Card, CardContent, Chip, CircularProgress, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import TideChart from "@/components/TideChart";
@@ -18,16 +18,22 @@ const StyledCard = styled(Card)(({ theme }) => ({
 
 export function TideInfo({ stationId, timeZoneOffsetSeconds }: TideInfoProps) {
     const { tideData, loading, error, fetchTideData } = useTideContext();
+    const [dataFetched, setDataFetched] = useState(false);
 
     useEffect(() => {
-        if (stationId && timeZoneOffsetSeconds !== undefined) {
+        setDataFetched(false); // Reset dataFetched when stationId changes
+    }, [stationId]);
+
+    useEffect(() => {
+        if (stationId && timeZoneOffsetSeconds !== undefined && !dataFetched) {
             const { startDateTime, endDateTime } = getStationDayBounds(
                 Date.now(),
                 timeZoneOffsetSeconds
             );
             fetchTideData(stationId, startDateTime, endDateTime);
+            setDataFetched(true);
         }
-    }, [stationId, fetchTideData, timeZoneOffsetSeconds]);
+    }, [stationId, fetchTideData, timeZoneOffsetSeconds, dataFetched]);
 
     if (loading) {
         return <Box display="flex" justifyContent="center" p={ 3 }><CircularProgress/></Box>;

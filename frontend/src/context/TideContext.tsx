@@ -1,5 +1,7 @@
-import React, { createContext, useCallback, useContext, useState } from 'react';
-import { environment } from '@/config/environment';
+'use client';
+
+import React, { createContext, useContext, useState } from 'react';
+import { gql, useQuery } from '@apollo/client';
 
 export interface TideExtreme {
     type: 'HIGH' | 'LOW';
@@ -29,60 +31,61 @@ export interface TideData {
     timeZoneOffsetSeconds: number;
 }
 
+const TIDE_QUERY = gql`
+    query GetTides($stationId: ID!, $startDateTime: String!, $endDateTime: String!) {
+        tides(stationId: $stationId, startDateTime: $startDateTime, endDateTime: $endDateTime) {
+            localTime
+            waterLevel
+            nearestStation
+            tideType
+            timeZoneOffsetSeconds
+            predictions {
+                timestamp
+                height
+            }
+            extremes {
+                type
+                timestamp
+                height
+            }
+        }
+    }
+`;
+
+
 interface TideContextType {
     tideData: TideData | null;
     loading: boolean;
     error: string | null;
-    fetchTideData: (stationId: string, startDateTime: string, endDateTime: string) => Promise<void>;
+    fetchTideData: (stationId: string, startDateTime: string, endDateTime: string) => void;
 }
 
 const TideContext = createContext<TideContextType | undefined>(undefined);
 
 export const TideProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [tideData, setTideData] = useState<TideData | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const fetchTideData = useCallback(async (
-        stationId: string,
-        startDateTime: string,
-        endDateTime: string
-    ) => {
-        setLoading(true);
-        try {
-            const url = new URL(`${environment.apiBaseUrl}/api/tides`);
-            url.searchParams.append('stationId', stationId);
-            url.searchParams.append('startDateTime', startDateTime);
-            url.searchParams.append('endDateTime', endDateTime);
-
-            const response = await fetch(url.toString());
-
-            if (!response.ok) {
-                if (response.status === 502) {
-                    setError('Unable to fetch tide data from NOAA. The station may not be reporting properly at the moment.');
-                } else {
-                    setError('Failed to fetch tide data');
-                }
-                return;
-            }
-
-            const data = await response.json();
-            // Preserve the timeZoneOffsetSeconds from previous data if not in new data
-            if (data && !data.timeZoneOffsetSeconds && tideData?.timeZoneOffsetSeconds) {
-                data.timeZoneOffsetSeconds = tideData.timeZoneOffsetSeconds;
-            }
-            setTideData(data);
-            setError(null);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to fetch tide data');
-            console.error('Error fetching tide data:', err);
-        } finally {
-            setLoading(false);
+    const { loading, error, refetch } = useQuery(TIDE_QUERY, {
+        skip: true,
+        onCompleted: (data) => {
+            setTideData(data.tides);
         }
-    }, [tideData?.timeZoneOffsetSeconds]);
+    });
+
+    const fetchTideData = (stationId: string, startDateTime: string, endDateTime: string) => {
+        refetch({ stationId, startDateTime, endDateTime }).then(result => {
+            setTideData(result.data.tides);
+        }).catch(error => {
+            console.error('Error fetching tide data:', error);
+        });
+    };
 
     return (
-        <TideContext.Provider value={{ tideData, loading, error, fetchTideData }}>
+        <TideContext.Provider value={{
+            tideData: tideData,
+            loading,
+            error: error?.message || null,
+            fetchTideData
+        }}>
             {children}
         </TideContext.Provider>
     );

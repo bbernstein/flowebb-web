@@ -30,6 +30,7 @@ export default function TideChart() {
                         newTime,
                         tideData.timeZoneOffsetSeconds
                     );
+                    console.log("TideChart calling fetchTideData", tideData.nearestStation, startDateTime, endDateTime);
                     fetchTideData(tideData.nearestStation, startDateTime, endDateTime);
                 }
             }
@@ -37,7 +38,7 @@ export default function TideChart() {
 
         return () => clearInterval(timer);
     }, [currentTime, tideData, fetchTideData]);
-    
+
     if (!tideData) {
         return null;
     }

@@ -153,7 +153,7 @@ function Map({
             popupAnchor: [0, -36],
         }),
     }), []);
-
+    
     const mapId = useMemo(() => `map-${ Math.random() }`, []);
 
     // Early return after hooks
@@ -177,7 +177,6 @@ function Map({
             <MapContainer
                 center={ [userLocation.lat, userLocation.lon] }
                 zoom={ 10 }
-                key={ mapId }
                 className="leaflet-crosshair"
             >
                 <MapController center={ userLocation } stations={ stations || [] }/>
@@ -187,6 +186,7 @@ function Map({
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+
 
                 <Marker position={ [userLocation.lat, userLocation.lon] } icon={ icons.user }>
                     <Popup>
