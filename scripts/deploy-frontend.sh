@@ -23,7 +23,6 @@ echo "NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL"
 
 # Build the Next.js application
 echo "Building Next.js application..."
-cd frontend
 npm ci
 npm run build
 
