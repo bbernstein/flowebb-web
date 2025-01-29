@@ -13,13 +13,10 @@ fi
 
 # Load environment-specific variables
 ENV_FILE=".env.$ENVIRONMENT"
-if [ ! -f "$ENV_FILE" ]; then
-    echo "Error: Environment file $ENV_FILE not found"
-    exit 1
+if [ -f "$ENV_FILE" ]; then
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
 fi
-
-# shellcheck disable=SC1090
-source "$ENV_FILE"
 
 # show the environment variables
 echo "NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL"
