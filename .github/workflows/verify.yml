@@ -1,4 +1,4 @@
-name: Verify
+name: Verify Web App
 
 on:
   pull_request:
