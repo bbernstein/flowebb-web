@@ -1,64 +1,65 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-import Image from 'next/image';
-import { TideInfo } from '@/components/TideInfo';
-import { Alert, Box, CircularProgress, Container, Stack, Typography } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import { locationStorage, stationStorage } from '@/utils/storage';
-import { TideProvider } from '@/context/TideContext';
-import LocationButton from '@/components/LocationButton';
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import { TideInfo } from "@/components/TideInfo";
+import { Alert, Box, CircularProgress, Container, Stack, Typography, } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { locationStorage, stationStorage } from "@/utils/storage";
+import { TideProvider } from "@/context/TideContext";
+import LocationButton from "@/components/LocationButton";
 import { useStationContext } from "@/context/StationContext";
 
 const TideInfoContainer = styled(Box)(({}) => ({
-    height: '500px',
-    transition: 'all 0.3s ease',
+    height: "500px",
+    transition: "all 0.3s ease",
     opacity: 1,
-    transform: 'translateY(0)',
-    '&.hidden': {
+    transform: "translateY(0)",
+    "&.hidden": {
         opacity: 0,
         height: 0,
-        transform: 'translateY(-20px)',
-        overflow: 'hidden'
-    }
+        transform: "translateY(-20px)",
+        overflow: "hidden",
+    },
 }));
 
 const PageContent = styled(Box)({
-    position: 'relative',
+    position: "relative",
 });
 
 const MapContainer = styled(Box)(({ theme }) => ({
-    height: '400px',
+    height: "400px",
     borderRadius: theme.shape.borderRadius,
-    overflow: 'hidden',
+    overflow: "hidden",
     border: `1px solid ${ theme.palette.divider }`,
     marginBottom: theme.spacing(4),
-    transition: 'transform 0.3s ease',
+    transition: "transform 0.3s ease",
 }));
 
-const Map = dynamic(
-    () => import('@/components/Map'),
-    { ssr: false }
-);
+const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
 // Add this styled component for the logo
 const LogoContainer = styled(Box)(({ theme }) => ({
-    width: '90px', // Adjusted to maintain aspect ratio with 30px height (300:100 = 90:30)
-    margin: '0 auto',
+    width: "90px", // Adjusted to maintain aspect ratio with 30px height (300:100 = 90:30)
+    margin: "0 auto",
     padding: theme.spacing(1), // Reduced padding
     marginTop: theme.spacing(2), // This plus the Container's py will give us roughly 50px total
-    '@media (max-width: 600px)': {
-        width: '75px', // Proportionally smaller for mobile
+    "@media (max-width: 600px)": {
+        width: "75px", // Proportionally smaller for mobile
     },
 }));
 
 export default function Home() {
-    const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
+    const [location, setLocation] = useState<{ lat: number; lon: number } | null>(
+        null
+    );
     // const [stations, setStations] = useState<Station[]>([]);
-    const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
+    const [selectedStationId, setSelectedStationId] = useState<string | null>(
+        null
+    );
     const [displayStationId, setDisplayStationId] = useState<string | null>(null);
-    const [error, setError] = useState<string>('');
+    const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState(true);
     const [locationLoading, setLocationLoading] = useState(false);
     const { stations, fetchStations } = useStationContext();
@@ -83,17 +84,21 @@ export default function Home() {
                 (position) => {
                     const newLocation = {
                         lat: position.coords.latitude,
-                        lon: position.coords.longitude
+                        lon: position.coords.longitude,
                     };
                     setLocation(newLocation);
                     locationStorage.set(newLocation);
-                    fetchStations(newLocation.lat, newLocation.lon).then(() => {});
+                    fetchStations(newLocation.lat, newLocation.lon).then(() => {
+                    });
                 },
                 () => {
                     const defaultLocation = { lat: 47.6062, lon: -122.3321 };
                     setLocation(defaultLocation);
                     locationStorage.set(defaultLocation);
-                    fetchStations(defaultLocation.lat, defaultLocation.lon).then(() => {});
+                    fetchStations(defaultLocation.lat, defaultLocation.lon).then(
+                        () => {
+                        }
+                    );
                 }
             );
         }
@@ -118,7 +123,7 @@ export default function Home() {
                 stationStorage.set({
                     id: selectedStation.id,
                     name: selectedStation.name,
-                    timeZoneOffset: selectedStation.timeZoneOffset
+                    timeZoneOffset: selectedStation.timeZoneOffset,
                 });
             } else {
                 // Only clear station selection if no stations found
@@ -126,14 +131,14 @@ export default function Home() {
                 setDisplayStationId(null);
             }
         } catch (error) {
-            console.error('Error handling map click:', error);
-            setError('Failed to load stations');
+            console.error("Error handling map click:", error);
+            setError("Failed to load stations");
         }
     };
 
     const getLocationAndStations = () => {
         if (!navigator.geolocation) {
-            setError('Geolocation is not supported by your browser');
+            setError("Geolocation is not supported by your browser");
             return;
         }
 
@@ -142,21 +147,29 @@ export default function Home() {
             (position) => {
                 const newLocation = {
                     lat: position.coords.latitude,
-                    lon: position.coords.longitude
+                    lon: position.coords.longitude,
                 };
                 setSelectedStationId(null);
                 setDisplayStationId(null);
                 locationStorage.set(newLocation);
-                fetchStations(newLocation.lat, newLocation.lon).then(() => {});
+                fetchStations(newLocation.lat, newLocation.lon)
+                    .then(() => {
+                        setLocationLoading(false);
+                    })
+                    .catch((error) => {
+                        console.error("Error fetching stations:", error);
+                        setError("Failed to load stations");
+                        setLocationLoading(false); // Ensure loading state is reset
+                    });
             },
             () => {
-                setError('Unable to retrieve your location');
+                setError("Unable to retrieve your location");
                 setLocationLoading(false);
             },
             {
                 timeout: 10000, // 10 second timeout
                 maximumAge: 0, // Don't use cached position
-                enableHighAccuracy: true
+                enableHighAccuracy: true,
             }
         );
     };
@@ -168,17 +181,21 @@ export default function Home() {
             setDisplayStationId(stationId);
         }
 
-        const selectedStation = stations.find(station => station.id === stationId);
+        const selectedStation = stations.find(
+            (station) => station.id === stationId
+        );
         if (selectedStation) {
             stationStorage.set({
                 id: selectedStation.id,
                 name: selectedStation.name,
-                timeZoneOffset: selectedStation.timeZoneOffset
+                timeZoneOffset: selectedStation.timeZoneOffset,
             });
         }
     };
 
-    const displayStation = stations.find(station => station.id === displayStationId);
+    const displayStation = stations.find(
+        (station) => station.id === displayStationId
+    );
 
     return (
         <Container maxWidth="lg" sx={ { py: 4 } }>
@@ -197,14 +214,19 @@ export default function Home() {
 
                 {/* Add loading check here */ }
                 { loading ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" height="400px">
+                    <Box
+                        display="flex"
+                        justifyContent="center"
+                        alignItems="center"
+                        height="400px"
+                    >
                         <CircularProgress/>
                     </Box>
                 ) : (
                     <PageContent>
                         <Stack spacing={ 5 }>
                             {/* TideInfo with transition */ }
-                            <TideInfoContainer className={ !displayStation ? 'hidden' : '' }>
+                            <TideInfoContainer className={ !displayStation ? "hidden" : "" }>
                                 { displayStation && (
                                     <Box>
                                         <Typography variant="h6" gutterBottom>
